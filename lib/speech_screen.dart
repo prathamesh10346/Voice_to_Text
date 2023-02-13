@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+import 'package:voicetospeek/api_services.dart';
 import 'package:voicetospeek/chat_model.dart';
 import 'package:voicetospeek/color.dart';
 
@@ -17,6 +18,17 @@ class _SpeechScreenState extends State<SpeechScreen> {
   SpeechToText speech = SpeechToText();
   var text = "Hold the button and start speeking";
   var listing = false;
+  final List<ChatMessage> message = [];
+  var scrollController = ScrollController();
+
+  scrollMethod() {
+    scrollController.animateTo(
+      scrollController.position.maxScrollExtent,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -48,11 +60,17 @@ class _SpeechScreenState extends State<SpeechScreen> {
                 }
               }
             },
-            onTapUp: (details) {
+            onTapUp: (details) async {
               setState(() {
                 listing = false;
               });
               speech.stop();
+
+              message.add(ChatMessage(text: text, type: ChatMessagetype.user));
+              var msg = await ApiServices.sendMessage(text);
+              setState(() {
+                message.add(ChatMessage(text: msg, type: ChatMessagetype.bot));
+              });
             },
             child: CircleAvatar(
               backgroundColor: const Color.fromARGB(255, 118, 196, 165),
@@ -98,7 +116,7 @@ class _SpeechScreenState extends State<SpeechScreen> {
           physics: const BouncingScrollPhysics(),
           child: Container(
             width: MediaQuery.of(context).size.width,
-            height: MediaQuery.of(context).size.height * 0.9,
+            height: MediaQuery.of(context).size.height * 0.7,
             alignment: Alignment.center,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             margin: const EdgeInsets.only(bottom: 150),
@@ -117,17 +135,19 @@ class _SpeechScreenState extends State<SpeechScreen> {
                 ),
                 Expanded(
                     child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEDEDED),
                     borderRadius: BorderRadius.circular(30),
                   ),
                   child: ListView.builder(
-                    itemCount: 4,
+                    physics: const BouncingScrollPhysics(),
+                    controller: scrollController,
+                    itemCount: message.length,
                     itemBuilder: (BuildContext context, int index) {
-                      return chatBubble(
-                          chattext: "Hello how are you Pt?",
-                          type: chatMessagetype.user);
+                      var chat = message[index];
+                      return chatBubble(chattext: chat.text, type: chat.type);
                     },
                   ),
                 )),
@@ -147,7 +167,7 @@ class _SpeechScreenState extends State<SpeechScreen> {
         ));
   }
 
-  Widget chatBubble({required chattext, required chatMessagetype type}) {
+  Widget chatBubble({required chattext, required ChatMessagetype? type}) {
     return Row(
       children: [
         const CircleAvatar(
@@ -170,7 +190,7 @@ class _SpeechScreenState extends State<SpeechScreen> {
                   bottomRight: Radius.circular(12)),
             ),
             child: Text("$chattext",
-                style: TextStyle(
+                style: const TextStyle(
                     color: Colors.black,
                     fontSize: 16,
                     fontWeight: FontWeight.w400)),

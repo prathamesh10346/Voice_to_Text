@@ -48,6 +48,7 @@ android {
     }
 
     defaultConfig {
+        ndkVersion "25.1.8937393"
         minSdkVersion localProperties.getProperty('flutter.minSdkVersion').toInteger()
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId "com.example.voicetospeek"
